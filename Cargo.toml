@@ -21,7 +21,7 @@ nu-ansi-term = { version = "0.45.1" }
 crossterm = { version = "0.23.2" }
 
 [dev-dependencies]
-clap = "2.34.0"
+clap = "3.1.18"
 
 [target.'cfg(windows)'.dependencies]
 winapi-util = "0.1.5"
