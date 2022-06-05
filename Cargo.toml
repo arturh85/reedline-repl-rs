@@ -17,7 +17,7 @@ edition = "2021"
 reedline = "0.6.0"
 regex = "1.5.6"
 yansi = "0.5.1"
-nu-ansi-term = { version = "0.45.1" }
+nu-ansi-term = { version = "0.46.0" }
 crossterm = { version = "0.23.2" }
 
 [dev-dependencies]
