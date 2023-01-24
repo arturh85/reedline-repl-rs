@@ -19,7 +19,7 @@ nu-ansi-term = { version = "0.45.1" }
 crossterm = { version = "0.23.2" }
 yansi = "0.5.1"
 regex = "1"
-clap = "3"
+clap = "4"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] } # only for async example
