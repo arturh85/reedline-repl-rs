@@ -31,7 +31,7 @@ tokio = { version = "1", features = [
 ] } # only for async example
 
 [target.'cfg(windows)'.dependencies]
-winapi-util = "0.1.6"
+winapi-util = "0.1.7"
 
 [features]
 default = []
