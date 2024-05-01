@@ -22,7 +22,7 @@ nu-ansi-term = { version = "0.50.0" }
 crossterm = { version = "0.27.0" }
 yansi = "1.0.1"
 regex = "1"
-clap = "4"
+clap = "4.5.4"
 
 [dev-dependencies]
 tokio = { version = "1.37.0", features = [
