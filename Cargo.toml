@@ -25,7 +25,7 @@ regex = "1"
 clap = "4"
 
 [dev-dependencies]
-tokio = { version = "1", features = [
+tokio = { version = "1.37.0", features = [
     "macros",
     "rt-multi-thread",
 ] } # only for async example
