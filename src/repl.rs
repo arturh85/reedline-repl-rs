@@ -5,8 +5,8 @@ use crate::prompt::ReplPrompt;
 use crate::{paint_green_bold, paint_yellow_bold, AfterCommandCallback, Callback};
 #[cfg(feature = "async")]
 use crate::{AsyncAfterCommandCallback, AsyncCallback};
-use reedline::MenuBuilder;
 use clap::Command;
+use reedline::MenuBuilder;
 // use crossterm::event::{KeyCode, KeyModifiers};
 use nu_ansi_term::{Color, Style};
 use reedline::{
@@ -287,6 +287,39 @@ where
         let name = command.get_name().to_string();
         self.commands
             .insert(name.clone(), ReplCommand::new(&name, command, callback));
+        self
+    }
+
+    #[cfg(feature = "async_derive")]
+    pub fn with_async_derived<Clap: clap::Parser>(
+        mut self,
+        callbacks: crate::AsyncCallBackMap<Context, E>,
+    ) -> Self {
+        let derived = Clap::command();
+
+        self = self.with_name(derived.get_name());
+
+        if let Some(version) = derived.get_version() {
+            self = self.with_version(version);
+        }
+
+        if let Some(desc) = derived.get_about() {
+            self = self.with_description(&desc.to_string());
+        }
+
+        let commands = derived.get_subcommands();
+
+        for command in commands {
+            let name = command.get_name();
+            let Some(callback) = callbacks.get(name) else {
+                continue;
+            };
+            let cmd: ReplCommand<Context, E> =
+                ReplCommand::new_async(&name, command.clone(), *callback);
+
+            self.commands.insert(name.to_string(), cmd);
+        }
+
         self
     }
 

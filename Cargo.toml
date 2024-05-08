@@ -39,6 +39,7 @@ async = []
 scripts = []
 macro = ["clap/cargo"]
 derive = ["clap/derive"]
+async_derive = ["async", "derive"]
 
 [[example]]
 name = "async"
@@ -67,3 +68,8 @@ required-features = ["derive"]
 name = "derive_with_context"
 path = "examples/derive/with_context.rs"
 required-features = ["derive"]
+
+[[example]]
+name = "dervice_async"
+path = "examples/derive/async.rs"
+required-features = ["async_derive"]

@@ -123,6 +123,10 @@ pub type Callback<Context, Error> =
 #[allow(dead_code)]
 type CommandName = String;
 
+#[cfg(feature = "async_derive")]
+pub type AsyncCallBackMap<Context, Error> =
+    std::collections::HashMap<CommandName, AsyncCallback<Context, Error>>;
+
 #[cfg(feature = "derive")]
 pub type CallBackMap<Context, Error> =
     std::collections::HashMap<CommandName, Callback<Context, Error>>;

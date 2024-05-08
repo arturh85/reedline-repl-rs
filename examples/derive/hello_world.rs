@@ -1,7 +1,6 @@
 //! Minimal example
 use std::collections::HashMap;
 
-use clap::Subcommand;
 use reedline_repl_rs::clap::{ArgMatches, Parser};
 use reedline_repl_rs::{CallBackMap, Repl, Result};
 
