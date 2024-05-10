@@ -492,11 +492,7 @@ where
     }
 
     fn parse_line(&self, line: &str) -> (String, Vec<String>) {
-        let r = regex::Regex::new(r#"("[^"\n]+"|[\S]+)"#).unwrap();
-        let mut args = r
-            .captures_iter(line)
-            .map(|a| a[0].to_string().replace('\"', ""))
-            .collect::<Vec<String>>();
+        let mut args = shell_words::split(line).unwrap();
         let command: String = args.drain(..1).collect();
         (command, args)
     }
