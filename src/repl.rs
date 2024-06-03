@@ -491,41 +491,70 @@ where
         Ok(())
     }
 
-    fn parse_line(&self, line: &str) -> (String, Vec<String>) {
+    #[cfg(not(feature = "shlex"))]
+    fn parse_line(&self, line: &str) -> Option<Vec<String>> {
         let r = regex::Regex::new(r#"("[^"\n]+"|[\S]+)"#).unwrap();
-        let mut args = r
-            .captures_iter(line)
-            .map(|a| a[0].to_string().replace('\"', ""))
-            .collect::<Vec<String>>();
-        let command: String = args.drain(..1).collect();
-        (command, args)
+        Some(r.captures_iter(line)
+              .map(|a| a[0].to_string().replace('\"', ""))
+              .collect::<Vec<String>>())
+    }
+
+    #[cfg(feature = "shlex")]
+    fn parse_line(&self, line: &str) -> Option<Vec<String>> {
+        shlex::split(line)
+    }
+
+    /// Process an array of arguments directly as command input.
+    /// This method is called internally after splitting an input line.
+    ///
+    /// May be used instead of `run_with_reader` to execute a single command.
+    /// An example use case is to process command line args directly as a command:
+    ///
+    /// ``` no_run
+    /// //
+    /// let mut repl = reedline_repl_rs::Repl::new(());
+    /// // ... set up repl ...
+    /// if std::env::args().len() > 1 {
+    ///     repl.process_argv(std::env::args().skip(1).collect::<Vec<String>>())?;
+    /// } else {
+    ///     repl.run()?;
+    /// }
+    /// ```
+    pub fn process_argv(&mut self, argv: Vec<String>) -> core::result::Result<(), E> {
+        let mut iter = argv.iter();
+        if let Some(command) = iter.next() {
+            self.handle_command(command, &iter.map(AsRef::as_ref).collect::<Vec<&str>>())
+        } else {
+            Ok(())
+        }
+    }
+
+    #[cfg(feature = "async")]
+    /// Async version of `process_argv`, please refer to `process_argv` for documentation
+    pub async fn process_argv_async(&mut self, argv: Vec<String>) -> core::result::Result<(), E> {
+        let mut iter = argv.iter();
+        if let Some(command) = iter.next() {
+            self.handle_command_async(command, &iter.map(AsRef::as_ref).collect::<Vec<&str>>()).await
+        } else {
+            Ok(())
+        }
     }
 
     fn process_line(&mut self, line: String) -> core::result::Result<(), E> {
-        let trimmed = line.trim();
-        if !trimmed.is_empty() {
-            let (command, args) = self.parse_line(trimmed);
-            let args = args.iter().fold(vec![], |mut state, a| {
-                state.push(a.as_str());
-                state
-            });
-            self.handle_command(&command, &args)?;
+        if let Some(args) = self.parse_line(&line) {
+            self.process_argv(args)
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 
     #[cfg(feature = "async")]
     async fn process_line_async(&mut self, line: String) -> core::result::Result<(), E> {
-        let trimmed = line.trim();
-        if !trimmed.is_empty() {
-            let (command, args) = self.parse_line(trimmed);
-            let args = args.iter().fold(vec![], |mut state, a| {
-                state.push(a.as_str());
-                state
-            });
-            self.handle_command_async(&command, &args).await?;
+        if let Some(args) = self.parse_line(&line) {
+            self.process_argv_async(args).await
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 
     fn build_line_editor(&mut self) -> Result<Reedline> {

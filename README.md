@@ -17,6 +17,7 @@ Features:
 - Configurable prompt with hooks to update after commands run
 - Command Syntax highlighting 
 - Feature-flag for async support
+- Feature-flag `shlex` for optional POSIX compliant line splitting
 - Tip: Search history with `CTRL+R`, clear input with `CTRL+C`, exit repl with `CTRL+D` 
 
 Basic example code:
