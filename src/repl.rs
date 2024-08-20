@@ -49,6 +49,10 @@ pub struct Repl<Context, E: Display> {
     stop_on_ctrl_c: bool,
     stop_on_ctrl_d: bool,
     error_handler: ErrorHandler<Context, E>,
+    #[cfg(windows)]
+    restore_stdout_mode: Option<u32>,
+    #[cfg(windows)]
+    restore_stderr_mode: Option<u32>,
 }
 
 impl<Context, E> Repl<Context, E>
@@ -89,6 +93,10 @@ where
             stop_on_ctrl_c: false,
             stop_on_ctrl_d: true,
             error_handler: default_error_handler,
+            #[cfg(windows)]
+            restore_stdout_mode: None,
+            #[cfg(windows)]
+            restore_stderr_mode: None,
         }
     }
 
@@ -645,7 +653,7 @@ where
 
     /// Execute REPL
     pub fn run(&mut self) -> Result<()> {
-        enable_virtual_terminal_processing();
+        self.enable_virtual_terminal_processing();
         if let Some(banner) = &self.banner {
             println!("{}", banner);
         }
@@ -673,14 +681,14 @@ where
                 }
             }
         }
-        disable_virtual_terminal_processing();
+        self.restore_virtual_terminal_processing_mode();
         Ok(())
     }
 
     /// Execute REPL
     #[cfg(feature = "async")]
     pub async fn run_async(&mut self) -> Result<()> {
-        enable_virtual_terminal_processing();
+        self.enable_virtual_terminal_processing();
         if let Some(banner) = &self.banner {
             println!("{}", banner);
         }
@@ -708,39 +716,35 @@ where
                 }
             }
         }
-        disable_virtual_terminal_processing();
+        self.restore_virtual_terminal_processing_mode();
         Ok(())
     }
-}
 
-#[cfg(windows)]
-pub fn enable_virtual_terminal_processing() {
-    use winapi_util::console::Console;
-    if let Ok(mut term) = Console::stdout() {
-        let _guard = term.set_virtual_terminal_processing(true);
+    fn enable_virtual_terminal_processing(&mut self) {
+        #[cfg(windows)]
+        {
+            use winapi_util::console::{self, Console};
+            self.restore_stdout_mode = console::mode(std::io::stdout()).ok();
+            self.restore_stderr_mode = console::mode(std::io::stderr()).ok();
+            if let Ok(mut term) = Console::stdout() {
+                let _guard = term.set_virtual_terminal_processing(true);
+            }
+            if let Ok(mut term) = Console::stderr() {
+                let _guard = term.set_virtual_terminal_processing(true);
+            }
+        }
     }
-    if let Ok(mut term) = Console::stderr() {
-        let _guard = term.set_virtual_terminal_processing(true);
-    }
-}
 
-#[cfg(windows)]
-pub fn disable_virtual_terminal_processing() {
-    use winapi_util::console::Console;
-    if let Ok(mut term) = Console::stdout() {
-        let _guard = term.set_virtual_terminal_processing(false);
+    fn restore_virtual_terminal_processing_mode(&mut self) {
+        #[cfg(windows)]
+        {
+            use winapi_util::console;
+            if let Some(mode) = self.restore_stdout_mode.take() {
+                let _guard = console::set_mode(std::io::stdout(), mode);
+            }
+            if let Some(mode) = self.restore_stderr_mode.take() {
+                let _guard = console::set_mode(std::io::stderr(), mode);
+            }
+        }
     }
-    if let Ok(mut term) = Console::stderr() {
-        let _guard = term.set_virtual_terminal_processing(false);
-    }
-}
-
-#[cfg(not(windows))]
-pub fn enable_virtual_terminal_processing() {
-    // no-op
-}
-
-#[cfg(not(windows))]
-pub fn disable_virtual_terminal_processing() {
-    // no-op
 }
