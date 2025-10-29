@@ -388,13 +388,11 @@ where
                 help_string = paint_yellow_bold("COMMANDS:")
                     + &help_string[(marker_pos + marker.len())..help_string.len()];
             }
-            let header = format!(
-                "{} {}\n{}\n",
-                paint_green_bold(&self.name),
-                self.version,
-                self.description
-            );
-            println!("{}", header);
+            println!("{} {}", paint_green_bold(&self.name), self.version);
+            if !self.description.is_empty() {
+                println!("{}", self.description);
+            }
+            println!();
             println!("{}", help_string);
         } else if let Some((_, subcommand)) = self
             .commands
