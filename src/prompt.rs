@@ -48,4 +48,8 @@ impl ReplPrompt {
     pub fn update_prefix(&mut self, prefix: &str) {
         self.default.left_prompt = DefaultPromptSegment::Basic(prefix.to_string());
     }
+
+    pub fn disable_clock(&mut self) {
+        self.default.right_prompt = DefaultPromptSegment::Empty;
+    }
 }

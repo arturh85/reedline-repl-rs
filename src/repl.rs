@@ -160,6 +160,13 @@ where
         self
     }
 
+    /// Don't show a clock on the right side of the prompt.
+    pub fn without_clock(mut self) -> Self {
+        self.prompt.disable_clock();
+
+        self
+    }
+
     /// Pass in a custom error handler. This is really only for testing - the default
     /// error handler simply prints the error to stderr and then returns
     pub fn with_error_handler(mut self, handler: ErrorHandler<Context, E>) -> Self {
