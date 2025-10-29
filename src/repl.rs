@@ -65,7 +65,6 @@ where
             KeyCode::Tab,
             ReedlineEvent::Menu("completion_menu".to_string()),
         );
-        let prompt = ReplPrompt::new(&paint_green_bold(&format!("{}> ", name)));
 
         Self {
             name,
@@ -82,7 +81,7 @@ where
             partial_completions: false,
             hinter_enabled: true,
             hinter_style: style,
-            prompt,
+            prompt: Default::default(),
             context,
             keybindings,
             external_printer: ExternalPrinter::new(2048),
@@ -92,7 +91,8 @@ where
         }
     }
 
-    /// Give your Repl a name. This is used in the help summary for the Repl.
+    /// Give your Repl a name. This is used in the help summary for the Repl
+    /// and in the default prompt.
     pub fn with_name(mut self, name: &str) -> Self {
         self.name = name.to_string();
         self.with_formatted_prompt(name)
@@ -145,10 +145,8 @@ where
         self
     }
 
-    /// Give your Repl a custom prompt. The default prompt is the Repl name, followed by
-    /// a `>`, all in green and bold, followed by a space:
-    ///
-    /// &Paint::green(format!("{}> ", name)).bold().to_string()
+    /// Give your Repl a custom prompt. The default prompt is `repl` in green,
+    /// followed by `〉` in cyan and a space.
     pub fn with_prompt(mut self, prompt: &str) -> Self {
         self.prompt.update_prefix(prompt);
 
@@ -156,8 +154,6 @@ where
     }
 
     /// Give your Repl a custom prompt while applying green/bold formatting automatically
-    ///
-    /// &Paint::green(format!("{}> ", name)).bold().to_string()
     pub fn with_formatted_prompt(mut self, prompt: &str) -> Self {
         self.prompt.update_prefix(prompt);
 
