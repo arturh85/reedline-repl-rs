@@ -374,8 +374,10 @@ where
     fn show_help(&self, args: &[&str]) -> Result<()> {
         if args.is_empty() {
             let mut app = Command::new("app").help_template("{usage-heading}\n{subcommands}");
-            for (_, com) in self.commands.iter() {
-                app = app.subcommand(com.command.clone());
+            let mut names = self.commands.keys().collect::<Vec<&String>>();
+            names.sort();
+            for name in names {
+                app = app.subcommand(self.commands.get(name).unwrap().command.clone());
             }
             println!("{} {}", paint_green_bold(&self.name), self.version);
             if !self.description.is_empty() {
