@@ -2,7 +2,7 @@ use crate::command::ReplCommand;
 use crate::completer::ReplCompleter;
 use crate::error::*;
 use crate::prompt::ReplPrompt;
-use crate::{paint_green_bold, paint_yellow_bold, AfterCommandCallback, Callback};
+use crate::{paint_green_bold, AfterCommandCallback, Callback};
 #[cfg(feature = "async")]
 use crate::{AsyncAfterCommandCallback, AsyncCallback};
 use clap::Command;
@@ -373,27 +373,16 @@ where
 
     fn show_help(&self, args: &[&str]) -> Result<()> {
         if args.is_empty() {
-            let mut app = Command::new("app");
-
+            let mut app = Command::new("app").help_template("{usage-heading}\n{subcommands}");
             for (_, com) in self.commands.iter() {
                 app = app.subcommand(com.command.clone());
-            }
-            let mut help_bytes: Vec<u8> = Vec::new();
-            app.write_help(&mut help_bytes)
-                .expect("failed to print help");
-            let mut help_string =
-                String::from_utf8(help_bytes).expect("Help message was invalid UTF8");
-            let marker = "SUBCOMMANDS:";
-            if let Some(marker_pos) = help_string.find(marker) {
-                help_string = paint_yellow_bold("COMMANDS:")
-                    + &help_string[(marker_pos + marker.len())..help_string.len()];
             }
             println!("{} {}", paint_green_bold(&self.name), self.version);
             if !self.description.is_empty() {
                 println!("{}", self.description);
             }
             println!();
-            println!("{}", help_string);
+            app.print_help().expect("failed to print help");
         } else if let Some((_, subcommand)) = self
             .commands
             .iter()
