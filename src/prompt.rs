@@ -1,22 +1,17 @@
-use reedline::{DefaultPrompt, Prompt, PromptEditMode, PromptHistorySearch};
+use reedline::{DefaultPrompt, DefaultPromptSegment, Prompt, PromptEditMode, PromptHistorySearch};
 use std::borrow::Cow;
 
 #[derive(Clone)]
 pub struct ReplPrompt {
     default: DefaultPrompt,
-    prefix: String,
 }
 
 impl Prompt for ReplPrompt {
-    /// Use prefix as render prompt
-    fn render_prompt_left(&self) -> Cow<'_, str> {
-        {
-            Cow::Borrowed(&self.prefix)
-        }
-    }
-
     // call default impl
-    fn render_prompt_right(&self) -> Cow<'_, str> {
+    fn render_prompt_left(&self) -> Cow<str> {
+        self.default.render_prompt_left()
+    }
+    fn render_prompt_right(&self) -> Cow<str> {
         self.default.render_prompt_right()
     }
     fn render_prompt_indicator(&self, edit_mode: PromptEditMode) -> Cow<'_, str> {
@@ -43,14 +38,18 @@ impl Default for ReplPrompt {
 impl ReplPrompt {
     /// Constructor for the default prompt, which takes the amount of spaces required between the left and right-hand sides of the prompt
     pub fn new(left_prompt: &str) -> ReplPrompt {
-        ReplPrompt {
-            prefix: left_prompt.to_string(),
+        let mut prompt = ReplPrompt {
             default: DefaultPrompt::default(),
-        }
+        };
+        prompt.update_prefix(left_prompt);
+        prompt
     }
 
-    #[allow(dead_code)]
     pub fn update_prefix(&mut self, prefix: &str) {
-        self.prefix = prefix.to_string();
+        self.default.left_prompt = DefaultPromptSegment::Basic(prefix.to_string());
+    }
+
+    pub fn disable_clock(&mut self) {
+        self.default.right_prompt = DefaultPromptSegment::Empty;
     }
 }
