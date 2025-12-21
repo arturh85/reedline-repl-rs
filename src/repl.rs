@@ -379,6 +379,21 @@ where
         self
     }
 
+    /// Immutably borrows the context.
+    pub fn context(&self) -> &Context {
+        &self.context
+    }
+
+    /// Mutably borrows the context.
+    pub fn context_mut(&mut self) -> &mut Context {
+        &mut self.context
+    }
+
+    /// Consumes the `Repl`, returning the wrapped context.
+    pub fn into_context(self) -> Context {
+        self.context
+    }
+
     fn show_help(&self, args: &[&str]) -> Result<()> {
         if args.is_empty() {
             let mut app = Command::new("app").help_template("{usage-heading}\n{subcommands}");
