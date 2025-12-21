@@ -2,7 +2,7 @@ use crate::command::ReplCommand;
 use crate::completer::ReplCompleter;
 use crate::error::*;
 use crate::prompt::ReplPrompt;
-use crate::{paint_green_bold, paint_yellow_bold, AfterCommandCallback, Callback};
+use crate::{paint_green_bold, AfterCommandCallback, Callback};
 #[cfg(feature = "async")]
 use crate::{AsyncAfterCommandCallback, AsyncCallback};
 use clap::Command;
@@ -381,29 +381,18 @@ where
 
     fn show_help(&self, args: &[&str]) -> Result<()> {
         if args.is_empty() {
-            let mut app = Command::new("app");
-
-            for (_, com) in self.commands.iter() {
-                app = app.subcommand(com.command.clone());
+            let mut app = Command::new("app").help_template("{usage-heading}\n{subcommands}");
+            let mut names = self.commands.keys().collect::<Vec<&String>>();
+            names.sort();
+            for name in names {
+                app = app.subcommand(self.commands.get(name).unwrap().command.clone());
             }
-            let mut help_bytes: Vec<u8> = Vec::new();
-            app.write_help(&mut help_bytes)
-                .expect("failed to print help");
-            let mut help_string =
-                String::from_utf8(help_bytes).expect("Help message was invalid UTF8");
-            let marker = "SUBCOMMANDS:";
-            if let Some(marker_pos) = help_string.find(marker) {
-                help_string = paint_yellow_bold("COMMANDS:")
-                    + &help_string[(marker_pos + marker.len())..help_string.len()];
+            println!("{} {}", paint_green_bold(&self.name), self.version);
+            if !self.description.is_empty() {
+                println!("{}", self.description);
             }
-            let header = format!(
-                "{} {}\n{}\n",
-                paint_green_bold(&self.name),
-                self.version,
-                self.description
-            );
-            println!("{}", header);
-            println!("{}", help_string);
+            println!();
+            app.print_help().expect("failed to print help");
         } else if let Some((_, subcommand)) = self
             .commands
             .iter()
