@@ -8,10 +8,10 @@ pub struct ReplPrompt {
 
 impl Prompt for ReplPrompt {
     // call default impl
-    fn render_prompt_left(&self) -> Cow<str> {
+    fn render_prompt_left(&self) -> Cow<'_, str> {
         self.default.render_prompt_left()
     }
-    fn render_prompt_right(&self) -> Cow<str> {
+    fn render_prompt_right(&self) -> Cow<'_, str> {
         self.default.render_prompt_right()
     }
     fn render_prompt_indicator(&self, edit_mode: PromptEditMode) -> Cow<'_, str> {
