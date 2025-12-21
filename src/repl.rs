@@ -545,12 +545,12 @@ where
     ///
     /// ``` no_run
     /// //
-    /// let mut repl = reedline_repl_rs::Repl::new(());
+    /// let mut repl = reedline_repl_rs::Repl::<(), reedline_repl_rs::Error>::new(());
     /// // ... set up repl ...
     /// if std::env::args().len() > 1 {
-    ///     repl.process_argv(std::env::args().skip(1).collect::<Vec<String>>())?;
+    ///     repl.process_argv(std::env::args().skip(1).collect::<Vec<String>>()).expect("should not fail");
     /// } else {
-    ///     repl.run()?;
+    ///     repl.run().expect("should not fail");
     /// }
     /// ```
     pub fn process_argv(&mut self, argv: Vec<String>) -> core::result::Result<(), E> {
