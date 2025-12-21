@@ -1,7 +1,7 @@
 //! Subcommands example
 use std::collections::HashMap;
 
-use clap::{arg, command, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use reedline_repl_rs::clap::{ArgAction, ArgMatches};
 use reedline_repl_rs::{CallBackMap, Repl, Result};
 

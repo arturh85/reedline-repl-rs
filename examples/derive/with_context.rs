@@ -1,5 +1,5 @@
 //! Example using Repl with Context
-use clap::{command, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use reedline_repl_rs::clap::ArgMatches;
 use reedline_repl_rs::{CallBackMap, Repl, Result};
 use std::collections::{HashMap, VecDeque};
