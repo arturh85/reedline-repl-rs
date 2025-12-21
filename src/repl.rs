@@ -2,7 +2,7 @@ use crate::command::ReplCommand;
 use crate::completer::ReplCompleter;
 use crate::error::*;
 use crate::prompt::ReplPrompt;
-use crate::{paint_green_bold, paint_yellow_bold, AfterCommandCallback, Callback};
+use crate::{paint_green_bold, AfterCommandCallback, Callback};
 #[cfg(feature = "async")]
 use crate::{AsyncAfterCommandCallback, AsyncCallback};
 use clap::Command;
@@ -49,6 +49,10 @@ pub struct Repl<Context, E: Display> {
     stop_on_ctrl_c: bool,
     stop_on_ctrl_d: bool,
     error_handler: ErrorHandler<Context, E>,
+    #[cfg(windows)]
+    restore_stdout_mode: Option<u32>,
+    #[cfg(windows)]
+    restore_stderr_mode: Option<u32>,
 }
 
 impl<Context, E> Repl<Context, E>
@@ -88,6 +92,10 @@ where
             stop_on_ctrl_c: false,
             stop_on_ctrl_d: true,
             error_handler: default_error_handler,
+            #[cfg(windows)]
+            restore_stdout_mode: None,
+            #[cfg(windows)]
+            restore_stderr_mode: None,
         }
     }
 
@@ -318,7 +326,7 @@ where
                 continue;
             };
             let cmd: ReplCommand<Context, E> =
-                ReplCommand::new_async(&name, command.clone(), *callback);
+                ReplCommand::new_async(name, command.clone(), *callback);
 
             self.commands.insert(name.to_string(), cmd);
         }
@@ -376,29 +384,18 @@ where
 
     fn show_help(&self, args: &[&str]) -> Result<()> {
         if args.is_empty() {
-            let mut app = Command::new("app");
-
-            for (_, com) in self.commands.iter() {
-                app = app.subcommand(com.command.clone());
+            let mut app = Command::new("app").help_template("{usage-heading}\n{subcommands}");
+            let mut names = self.commands.keys().collect::<Vec<&String>>();
+            names.sort();
+            for name in names {
+                app = app.subcommand(self.commands.get(name).unwrap().command.clone());
             }
-            let mut help_bytes: Vec<u8> = Vec::new();
-            app.write_help(&mut help_bytes)
-                .expect("failed to print help");
-            let mut help_string =
-                String::from_utf8(help_bytes).expect("Help message was invalid UTF8");
-            let marker = "SUBCOMMANDS:";
-            if let Some(marker_pos) = help_string.find(marker) {
-                help_string = paint_yellow_bold("COMMANDS:")
-                    + &help_string[(marker_pos + marker.len())..help_string.len()];
+            println!("{} {}", paint_green_bold(&self.name), self.version);
+            if !self.description.is_empty() {
+                println!("{}", self.description);
             }
-            let header = format!(
-                "{} {}\n{}\n",
-                paint_green_bold(&self.name),
-                self.version,
-                self.description
-            );
-            println!("{}", header);
-            println!("{}", help_string);
+            println!();
+            app.print_help().expect("failed to print help");
         } else if let Some((_, subcommand)) = self
             .commands
             .iter()
@@ -548,12 +545,12 @@ where
     ///
     /// ``` no_run
     /// //
-    /// let mut repl = reedline_repl_rs::Repl::new(());
+    /// let mut repl = reedline_repl_rs::Repl::<(), reedline_repl_rs::Error>::new(());
     /// // ... set up repl ...
     /// if std::env::args().len() > 1 {
-    ///     repl.process_argv(std::env::args().skip(1).collect::<Vec<String>>())?;
+    ///     repl.process_argv(std::env::args().skip(1).collect::<Vec<String>>()).expect("should not fail");
     /// } else {
-    ///     repl.run()?;
+    ///     repl.run().expect("should not fail");
     /// }
     /// ```
     pub fn process_argv(&mut self, argv: Vec<String>) -> core::result::Result<(), E> {
@@ -595,9 +592,7 @@ where
 
     fn build_line_editor(&mut self) -> Result<Reedline> {
         let mut valid_commands: Vec<String> = self
-            .commands
-            .iter()
-            .map(|(_, command)| command.name.clone())
+            .commands.values().map(|command| command.name.clone())
             .collect();
         valid_commands.push("help".to_string());
         let completer = Box::new(ReplCompleter::new(&self.commands));
@@ -648,7 +643,7 @@ where
 
     /// Execute REPL
     pub fn run(&mut self) -> Result<()> {
-        enable_virtual_terminal_processing();
+        self.enable_virtual_terminal_processing();
         if let Some(banner) = &self.banner {
             println!("{}", banner);
         }
@@ -676,14 +671,14 @@ where
                 }
             }
         }
-        disable_virtual_terminal_processing();
+        self.restore_virtual_terminal_processing_mode();
         Ok(())
     }
 
     /// Execute REPL
     #[cfg(feature = "async")]
     pub async fn run_async(&mut self) -> Result<()> {
-        enable_virtual_terminal_processing();
+        self.enable_virtual_terminal_processing();
         if let Some(banner) = &self.banner {
             println!("{}", banner);
         }
@@ -711,39 +706,35 @@ where
                 }
             }
         }
-        disable_virtual_terminal_processing();
+        self.restore_virtual_terminal_processing_mode();
         Ok(())
     }
-}
 
-#[cfg(windows)]
-pub fn enable_virtual_terminal_processing() {
-    use winapi_util::console::Console;
-    if let Ok(mut term) = Console::stdout() {
-        let _guard = term.set_virtual_terminal_processing(true);
+    fn enable_virtual_terminal_processing(&mut self) {
+        #[cfg(windows)]
+        {
+            use winapi_util::console::{self, Console};
+            self.restore_stdout_mode = console::mode(std::io::stdout()).ok();
+            self.restore_stderr_mode = console::mode(std::io::stderr()).ok();
+            if let Ok(mut term) = Console::stdout() {
+                let _guard = term.set_virtual_terminal_processing(true);
+            }
+            if let Ok(mut term) = Console::stderr() {
+                let _guard = term.set_virtual_terminal_processing(true);
+            }
+        }
     }
-    if let Ok(mut term) = Console::stderr() {
-        let _guard = term.set_virtual_terminal_processing(true);
-    }
-}
 
-#[cfg(windows)]
-pub fn disable_virtual_terminal_processing() {
-    use winapi_util::console::Console;
-    if let Ok(mut term) = Console::stdout() {
-        let _guard = term.set_virtual_terminal_processing(false);
+    fn restore_virtual_terminal_processing_mode(&mut self) {
+        #[cfg(windows)]
+        {
+            use winapi_util::console;
+            if let Some(mode) = self.restore_stdout_mode.take() {
+                let _guard = console::set_mode(std::io::stdout(), mode);
+            }
+            if let Some(mode) = self.restore_stderr_mode.take() {
+                let _guard = console::set_mode(std::io::stderr(), mode);
+            }
+        }
     }
-    if let Ok(mut term) = Console::stderr() {
-        let _guard = term.set_virtual_terminal_processing(false);
-    }
-}
-
-#[cfg(not(windows))]
-pub fn enable_virtual_terminal_processing() {
-    // no-op
-}
-
-#[cfg(not(windows))]
-pub fn disable_virtual_terminal_processing() {
-    // no-op
 }

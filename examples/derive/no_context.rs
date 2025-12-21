@@ -1,7 +1,7 @@
 //! Example using Repl without Context (or, more precisely, a Context of ())
 use std::collections::HashMap;
 
-use clap::{command, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use reedline_repl_rs::clap::ArgMatches;
 use reedline_repl_rs::{CallBackMap, Repl, Result};
 

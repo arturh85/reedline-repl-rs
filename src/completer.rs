@@ -69,6 +69,7 @@ impl ReplCompleter {
             span,
             style,
             append_whitespace: true,
+            match_indices: None,
         }
     }
 

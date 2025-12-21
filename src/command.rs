@@ -5,7 +5,6 @@ use clap::Command;
 use std::fmt;
 
 /// Struct to define a command in the REPL
-
 pub(crate) struct ReplCommand<Context, E> {
     pub(crate) name: String,
     pub(crate) command: Command,

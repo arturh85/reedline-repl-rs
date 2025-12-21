@@ -14,16 +14,16 @@ impl Prompt for ReplPrompt {
     fn render_prompt_right(&self) -> Cow<str> {
         self.default.render_prompt_right()
     }
-    fn render_prompt_indicator(&self, edit_mode: PromptEditMode) -> Cow<str> {
+    fn render_prompt_indicator(&self, edit_mode: PromptEditMode) -> Cow<'_, str> {
         self.default.render_prompt_indicator(edit_mode)
     }
-    fn render_prompt_multiline_indicator(&self) -> Cow<str> {
+    fn render_prompt_multiline_indicator(&self) -> Cow<'_, str> {
         self.default.render_prompt_multiline_indicator()
     }
     fn render_prompt_history_search_indicator(
         &self,
         history_search: PromptHistorySearch,
-    ) -> Cow<str> {
+    ) -> Cow<'_, str> {
         self.default
             .render_prompt_history_search_indicator(history_search)
     }
