@@ -642,13 +642,30 @@ where
     #[cfg(feature = "scripts")]
     /// Executs REPL taking an object with a `std::io::BufRead` implementation
     /// as input
-    /// This is useful for executing scripts. Exampel structure that can be used here
+    /// This is useful for executing scripts. Example structure that can be used here
     /// is `std::io::BufReader` built on `std::fs::File`
     pub fn run_with_reader(&mut self, reader: impl std::io::BufRead) -> Result<()> {
         let lines = reader.lines();
         for line in lines {
             let line = line.expect("failed to read line");
             if let Err(err) = self.process_line(line) {
+                (self.error_handler)(err, self)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    #[cfg(all(feature = "async", feature = "scripts"))]
+    /// Executs REPL taking an object with a `std::io::BufRead` implementation
+    /// as input
+    /// This is useful for executing scripts. Example structure that can be used here
+    /// is `std::io::BufReader` built on `std::fs::File`
+    pub async fn run_with_reader_async(&mut self, reader: impl std::io::BufRead) -> Result<()> {
+        let lines = reader.lines();
+        for line in lines {
+            let line = line.expect("failed to read line");
+            if let Err(err) = self.process_line_async(line).await {
                 (self.error_handler)(err, self)?;
             }
         }
